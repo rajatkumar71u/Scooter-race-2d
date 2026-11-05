@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>City Scooter 2D Extreme - Made by Mirai</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background-color: #030712;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            max-width: 920px;
+            height: 100vh;
+            max-height: 520px;
+            background: #090d16;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(56, 189, 248, 0.15);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Top HUD */
+        #hud {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .hud-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 7px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        .battery-bar {
+            width: 80px;
+            height: 11px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            overflow: hidden;
+            padding: 1px;
+        }
+        #battery-fill {
+            width: 100%;
+            height: 100%;
+            background: #10b981;
+            border-radius: 4px;
+            transition: width 0.1s linear, background-color 0.2s;
+        }
+
+        /* Touch Mobile Controls */
+        #touch-controls {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            right: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .touch-group {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        .btn-ctrl {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+            transition: transform 0.1s, filter 0.1s;
+        }
+        .btn-ctrl span { font-size: 18px; margin-bottom: 2px; }
+        .btn-ctrl:active, .btn-ctrl.active {
+            transform: scale(0.9);
+            filter: brightness(1.3);
+        }
+        #btn-gas { background: rgba(16, 185, 129, 0.45); border-color: #10b981; }
+        #btn-brake { background: rgba(239, 68, 68, 0.45); border-color: #ef4444; }
+        #btn-nitro { background: rgba(217, 70, 239, 0.55); border-color: #d946ef; width: 68px; height: 68px; }
+        #btn-jump { background: rgba(56, 189, 248, 0.45); border-color: #38bdf8; }
+
+        /* Screens & Modern Glass UI */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.94), rgba(3, 7, 18, 0.98));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 25;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hero-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 24px 34px;
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 520px;
+        }
+        .game-logo {
+            font-size: 40px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            text-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+        .author-tag {
+            font-size: 12px;
+            font-weight: 800;
+            color: #f43f5e;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            background: rgba(244, 63, 94, 0.15);
+            padding: 4px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(244, 63, 94, 0.35);
+        }
+        .weather-pill {
+            display: flex;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 18px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 5px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .weather-pill span { color: #facc15; }
+
+        .btn-action {
+            padding: 13px 40px;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.5);
+            transition: all 0.2s ease;
+            width: 100%;
+            max-width: 240px;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(2, 132, 199, 0.7);
+        }
+        .btn-action:active { transform: scale(0.96); }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+            margin-top: 10px;
+            font-size: 14px;
+            padding: 10px 28px;
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.16); }
+
+        /* Garage Screen */
+        #garage-screen {
+            display: none;
+            z-index: 30;
+            overflow-y: auto;
+        }
+        .garage-wrapper {
+            width: 100%;
+            max-width: 640px;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        }
+        .garage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .garage-title { font-size: 20px; font-weight: 800; color: #38bdf8; }
+        .garage-coins { font-size: 15px; font-weight: 800; color: #fbbf24; }
+
+        .garage-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .veh-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .veh-card.selected {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        .veh-name { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+        .veh-stat { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+        .btn-card {
+            font-size: 11px;
+            padding: 5px 14px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-buy { background: #f59e0b; color: #000; }
+        .btn-select { background: #38bdf8; color: #000; }
+        .btn-equipped { background: #10b981; color: #fff; cursor: default; }
+
+        .custom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            background: rgba(30, 41, 59, 0.6);
+            padding: 8px 14px;
+            border-radius: 12px;
+        }
+        .custom-label { font-size: 12px; font-weight: 700; color: #cbd5e1; }
+        .swatch-group { display: flex; gap: 8px; }
+        .swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+            transition: transform 0.15s;
+        }
+        .swatch.active { transform: scale(1.25); box-shadow: 0 0 12px #fff; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Top In-Game HUD -->
+    <div id="hud">
+        <div class="hud-card">
+            <span>⚡</span>
+            <div class="battery-bar">
+                <div id="battery-fill"></div>
+            </div>
+        </div>
+        <div class="hud-card">
+            <span style="color:#fbbf24;">🪙 <span id="coins-count">0</span></span>
+        </div>
+        <div class="hud-card">
+            <span id="biome-badge" style="color:#a855f7;">🌆 CYBER</span>
+            <span style="color:rgba(255,255,255,0.4);">|</span>
+            <span style="color:#38bdf8;"><span id="dist-count">0</span>m</span>
+        </div>
+    </div>
+
+    <!-- On-screen Touch Controls -->
+    <div id="touch-controls">
+        <div class="touch-group">
+            <button class="btn-ctrl" id="btn-brake"><span>🛑</span>BRAKE</button>
+            <button class="btn-ctrl" id="btn-jump"><span>⬆️</span>JUMP</button>
+        </div>
+        <div class="touch-group">
+            <button class="btn-ctrl" id="btn-nitro"><span>🚀</span>NITRO</button>
+            <button class="btn-ctrl" id="btn-gas"><span>⚡</span>GO</button>
+        </div>
+    </div>
+
+    <!-- 1. Hero First Page -->
+    <div class="overlay-screen" id="start-screen">
+        <div class="hero-box">
+            <div class="game-logo">CITY SCOOTER 2D</div>
+            <div class="author-tag">MADE BY MIRAI</div>
+            <div class="weather-pill">
+                <span>🌦️ 10 WEATHERS:</span> Desert, Snow, Rain, Sunset, Cyber & More!
+            </div>
+            <p style="color:#94a3b8; font-size:13px; line-height:1.5; margin-bottom:20px;">
+                High speed electric scooter physics, real ground suspension, road traffic, and realistic dynamic engine sound.
+            </p>
+            <button class="btn-action" id="btn-start">RIDE NOW ⚡</button>
+            <button class="btn-action btn-secondary" id="btn-open-garage">🛵 GARAGE & SKINS</button>
+        </div>
+    </div>
+
+    <!-- 2. Garage Modal -->
+    <div class="overlay-screen" id="garage-screen">
+        <div class="garage-wrapper">
+            <div class="garage-header">
+                <div class="garage-title">MIRAI CUSTOM GARAGE</div>
+                <div class="garage-coins">🪙 Coins: <span id="garage-coins-val">0</span></div>
+            </div>
+
+            <div class="garage-grid" id="vehicles-container"></div>
+
+            <div class="custom-row">
+                <div class="custom-label">SCOOTER COLOR:</div>
+                <div class="swatch-group" id="color-swatches"></div>
+            </div>
+
+            <div class="custom-row">
+                <div class="custom-label">RIDER SUIT:</div>
+                <div class="swatch-group" id="rider-swatches"></div>
+            </div>
+
+            <button class="btn-action" id="btn-close-garage" style="width:100%; margin-top:8px;">DONE / BACK</button>
+        </div>
+    </div>
+
+    <!-- 3. Game Over Screen -->
+    <div class="overlay-screen" id="gameover-screen" style="display:none;">
+        <div class="hero-box" style="border-color: rgba(239, 68, 68, 0.4);">
+            <div class="game-logo" id="gameover-heading" style="background:linear-gradient(135deg, #ef4444, #f87171); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">CRASHED!</div>
+            <div class="screen-desc" id="gameover-msg" style="color:#cbd5e1; font-size:14px; margin: 8px 0 16px 0;">Scooter crash ho gayi!</div>
+            <p style="font-size:18px; margin-bottom: 22px; color:#fbbf24; font-weight:800; background:rgba(251, 191, 36, 0.12); padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                Distance: <span id="final-dist">0</span>m &nbsp;|&nbsp; Earned: 🪙<span id="final-coins">0</span>
+            </p>
+            <button class="btn-action" id="btn-restart">PLAY AGAIN 🔁</button>
+            <button class="btn-action btn-secondary" id="btn-gameover-garage">GARAGE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const batteryFill = document.getElementById('battery-fill');
+const coinsCountEl = document.getElementById('coins-count');
+const distCountEl = document.getElementById('dist-count');
+const biomeBadge = document.getElementById('biome-badge');
+const startScreen = document.getElementById('start-screen');
+const garageScreen = document.getElementById('garage-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const gameoverHeading = document.getElementById('gameover-heading');
+const gameoverMsg = document.getElementById('gameover-msg');
+const finalDistEl = document.getElementById('final-dist');
+const finalCoinsEl = document.getElementById('final-coins');
+const garageCoinsVal = document.getElementById('garage-coins-val');
+
+function resize() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// 10 DYNAMIC WEATHERS & BIOMES
+const BIOMES = [
+    { name: 'CYBER NEON', icon: '🌆', skyTop: '#090d16', skyBottom: '#0284c7', road: '#1e293b', curb: '#38bdf8', weather: 'clear' },
+    { name: 'SAHARA DESERT', icon: '🏜️', skyTop: '#7c2d12', skyBottom: '#ea580c', road: '#78350f', curb: '#fde047', weather: 'sand' },
+    { name: 'SNOW BLIZZARD', icon: '❄️', skyTop: '#1e293b', skyBottom: '#94a3b8', road: '#334155', curb: '#f8fafc', weather: 'snow' },
+    { name: 'SUNSET PALMS', icon: '🌅', skyTop: '#4a044e', skyBottom: '#e11d48', road: '#1e1b4b', curb: '#fb7185', weather: 'clear' },
+    { name: 'NIGHT RAINSTORM', icon: '🌧️', skyTop: '#020617', skyBottom: '#0f172a', road: '#090d16', curb: '#64748b', weather: 'rain' },
+    { name: 'TOXIC WASTELAND', icon: '☣️', skyTop: '#14532d', skyBottom: '#65a30d', road: '#1c1917', curb: '#a3e635', weather: 'toxic' },
+    { name: 'AUTUMN FOREST', icon: '🍁', skyTop: '#451a03', skyBottom: '#b45309', road: '#292524', curb: '#fbbf24', weather: 'leaves' },
+    { name: 'VOLCANIC ASH', icon: '🌋', skyTop: '#18181b', skyBottom: '#b91c1c', road: '#27272a', curb: '#f87171', weather: 'ash' },
+    { name: 'GOLDEN DAWN', icon: '✨', skyTop: '#0f172a', skyBottom: '#eab308', road: '#334155', curb: '#fef08a', weather: 'clear' },
+    { name: 'DEEP SPACE', icon: '🌌', skyTop: '#020617', skyBottom: '#6d28d9', road: '#090d16', curb: '#c084fc', weather: 'space' }
+];
+
+// AUDIO ENGINE
+let audioCtx = null;
+let engineOsc = null, engineSubOsc = null, engineGain = null;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function startEngineSound() {
+    if (!audioCtx || engineOsc) return;
+    try {
+        engineOsc = audioCtx.createOscillator();
+        engineSubOsc = audioCtx.createOscillator();
+        engineGain = audioCtx.createGain();
+
+        engineOsc.type = 'sawtooth';
+        engineSubOsc.type = 'sine';
+        engineOsc.frequency.value = 45;
+        engineSubOsc.frequency.value = 25;
+
+        engineGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+
+        engineOsc.connect(engineGain);
+        engineSubOsc.connect(engineGain);
+        engineGain.connect(audioCtx.destination);
+
+        engineOsc.start();
+        engineSubOsc.start();
+    } catch(e){}
+}
+
+function updateEngineSound(speed) {
+    if (!engineOsc || !engineGain || !isPlaying) return;
+    try {
+        const targetFreq = 42 + speed * 16;
+        engineOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.08);
+        engineSubOsc.frequency.setTargetAtTime(targetFreq * 0.5, audioCtx.currentTime, 0.08);
+
+        const targetVol = isNitroActive ? 0.14 : (0.02 + (speed / 20) * 0.06);
+        engineGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.08);
+    } catch(e){}
+}
+
+function stopEngineSound() {
+    if (engineGain && audioCtx) {
+        try {
+            engineGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            if (engineOsc) { engineOsc.stop(); engineOsc.disconnect(); engineOsc = null; }
+            if (engineSubOsc) { engineSubOsc.stop(); engineSubOsc.disconnect(); engineSubOsc = null; }
+            engineGain.disconnect();
+            engineGain = null;
+        } catch(e){}
+    }
+}
+
+function playSFX(freq, duration, type='sine', gainVal=0.1) {
+    if (!audioCtx) return;
+    try {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
+}
+
+// Persisted Player Save Data
+let totalCoins = parseInt(localStorage.getItem('mirai_pro_coins') || '150');
+let ownedVehicles = JSON.parse(localStorage.getItem('mirai_pro_owned') || '["v1"]');
+let currentVehicleId = localStorage.getItem('mirai_pro_active') || 'v1';
+let currentPaint = localStorage.getItem('mirai_pro_paint') || '#06b6d4';
+let currentRider = localStorage.getItem('mirai_pro_rider') || '#f43f5e';
+
+function saveGameData() {
+    localStorage.setItem('mirai_pro_coins', totalCoins.toString());
+    localStorage.setItem('mirai_pro_owned', JSON.stringify(ownedVehicles));
+    localStorage.setItem('mirai_pro_active', currentVehicleId);
+    localStorage.setItem('mirai_pro_paint', currentPaint);
+    localStorage.setItem('mirai_pro_rider', currentRider);
+    garageCoinsVal.innerText = totalCoins;
+    coinsCountEl.innerText = totalCoins;
+}
+
+const VEHICLES = [
+    { id: 'v1', name: 'City Cruiser', price: 0, maxSpeed: 9.0, accel: 0.14, batterySave: 1.0, desc: 'Balanced handling' },
+    { id: 'v2', name: 'Cyber Neon', price: 150, maxSpeed: 11.0, accel: 0.18, batterySave: 1.3, desc: 'Speed & drift boost' },
+    { id: 'v3', name: 'Thunder Beast', price: 350, maxSpeed: 13.5, accel: 0.22, batterySave: 1.6, desc: 'Heavy sports motor' },
+    { id: 'v4', name: 'Phantom Gold', price: 700, maxSpeed: 16.5, accel: 0.28, batterySave: 2.0, desc: 'Supreme hyper performance' }
+];
+
+const PAINTS = ['#06b6d4', '#f97316', '#84cc16', '#ec4899', '#eab308'];
+const RIDERS = ['#f43f5e', '#3b82f6', '#10b981', '#a855f7'];
+
+// Gameplay Variables
+let isPlaying = false, distance = 0, currentBiomeIndex = 0, runEarnedCoins = 0, battery = 100;
+let isNitroActive = false, suspensionBounce = 0;
+const keys = { gas: false, brake: false, jump: false, nitro: false };
+
+window.addEventListener('keydown', e => {
+    initAudio();
+    if (!engineOsc && isPlaying) startEngineSound();
+    if (e.code === 'ArrowRight' || e.key === 'd') keys.gas = true;
+    if (e.code === 'ArrowLeft' || e.key === 'a') keys.brake = true;
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.nitro = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w') {
+        if (!keys.jump) tryJump();
+        keys.jump = true;
+    }
+});
+window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowRight' || e.key === 'd') keys.gas = false;
+    if (e.code === 'ArrowLeft' || e.key === 'a') keys.brake = false;
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.nitro = false;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w') keys.jump = false;
+});
+
+function setupBtn(id, keyName, isJump=false) {
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        initAudio();
+        if (!engineOsc && isPlaying) startEngineSound();
+        if (isJump) tryJump();
+        keys[keyName] = true;
+        el.classList.add('active');
+    });
+    const release = () => {
+        keys[keyName] = false;
+        el.classList.remove('active');
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointerleave', release);
+    el.addEventListener('pointercancel', release);
+}
+setupBtn('btn-gas', 'gas');
+setupBtn('btn-brake', 'brake');
+setupBtn('btn-jump', 'jump', true);
+setupBtn('btn-nitro', 'nitro');
+
+// SCOOTER MODEL
+const scooter = {
+    x: 100,
+    y: 0,
+    vy: 0,
+    width: 80,
+    height: 70,
+    wheelRadius: 13,
+    speed: 0,
+    maxSpeed: 9.0,
+    accel: 0.14,
+    friction: 0.04,
+    gravity: 0.58,
+    isGrounded: true,
+    wheelAngle: 0,
+    angle: 0
+};
+
+function applyActiveVehicleStats() {
+    const active = VEHICLES.find(v => v.id === currentVehicleId) || VEHICLES[0];
+    scooter.maxSpeed = active.maxSpeed;
+    scooter.accel = active.accel;
+}
+
+function tryJump() {
+    if (scooter.isGrounded && isPlaying) {
+        scooter.vy = -13.8;
+        scooter.isGrounded = false;
+        playSFX(360, 0.16, 'triangle', 0.12);
+        createSparks(scooter.x + 20, getRoadY(scooter.x), '#38bdf8');
+    }
+}
+
+// Background Parallax
+const bgFar = [];
+for (let i = 0; i < 25; i++) {
+    bgFar.push({
+        x: i * 85,
+        width: 65 + Math.random() * 30,
+        height: 140 + Math.random() * 120
+    });
+}
+
+let gameObjects = [];
+let particles = [];
+let weatherParticles = [];
+let spawnTimer = 0;
+
+function createSparks(x, y, color) {
+    for (let i = 0; i < 7; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 5 - scooter.speed * 0.4,
+            vy: (Math.random() - 0.7) * 4,
+            life: 1.0,
+            color: color
+        });
+    }
+}
+
+// ROAD ELEVATION (Perfect height for solid asphalt base)
+function getRoadY(x) {
+    const baseY = canvas.height - 110;
+    const wave = Math.sin((x + distance * 10) * 0.004) * 25;
+    return baseY + wave;
+}
+
+function spawnItem() {
+    const rand = Math.random();
+    let picked = 'coin';
+    if (rand < 0.35) picked = 'coin';
+    else if (rand < 0.55) picked = 'cone';
+    else if (rand < 0.70) picked = 'barrier';
+    else if (rand < 0.85) picked = 'traffic_car';
+    else if (rand < 0.95) picked = 'battery';
+    else picked = 'speed_breaker';
+
+    let objWidth = 24, objHeight = 24;
+    if (picked === 'barrier') { objWidth = 38; objHeight = 30; }
+    else if (picked === 'traffic_car') { objWidth = 84; objHeight = 44; }
+    else if (picked === 'speed_breaker') { objWidth = 55; objHeight = 12; }
+
+    gameObjects.push({
+        type: picked,
+        x: canvas.width + 60,
+        y: 0,
+        width: objWidth,
+        height: objHeight,
+        moveSpeed: picked === 'traffic_car' ? 1.8 : 0
+    });
+}
+
+function initWeather() {
+    weatherParticles = [];
+    for (let i = 0; i < 60; i++) {
+        weatherParticles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            speedY: 2 + Math.random() * 4,
+            speedX: -2 - Math.random() * 3,
+            size: 1 + Math.random() * 2
+        });
+    }
+}
+initWeather();
+
+function update() {
+    if (!isPlaying) return;
+
+    const currentVeh = VEHICLES.find(v => v.id === currentVehicleId) || VEHICLES[0];
+
+    // Nitro / Gas / Brake
+    if (keys.nitro && battery > 15) {
+        isNitroActive = true;
+        scooter.speed += scooter.accel * 2.5;
+        battery -= 0.14 / currentVeh.batterySave;
+        if (Math.random() < 0.5) {
+            particles.push({
+                x: scooter.x + 8,
+                y: scooter.y + 45,
+                vx: -scooter.speed - Math.random() * 3,
+                vy: (Math.random() - 0.5) * 2,
+                life: 0.8,
+                color: '#d946ef'
+            });
+        }
+    } else {
+        isNitroActive = false;
+        if (keys.gas && battery > 0) {
+            scooter.speed += scooter.accel;
+            battery -= 0.024 / currentVeh.batterySave;
+        } else if (keys.brake) {
+            scooter.speed -= 0.28;
+            if (scooter.speed > 1) createSparks(scooter.x + 65, getRoadY(scooter.x), '#f97316');
+        } else {
+            scooter.speed -= scooter.friction;
+        }
+    }
+
+    const topLimit = isNitroActive ? (currentVeh.maxSpeed * 1.6) : currentVeh.maxSpeed;
+    if (scooter.speed > topLimit) scooter.speed = topLimit;
+    if (scooter.speed < 0) scooter.speed = 0;
+
+    updateEngineSound(scooter.speed);
+
+    // Battery Check
+    if (battery <= 0) {
+        battery = 0;
+        if (scooter.speed <= 0.2) {
+            endGame('BATTERY DEAD!', 'Scooter discharge ho gayi! Agli baar battery pack uthao.');
+            return;
+        }
+    }
+    batteryFill.style.width = battery + '%';
+    batteryFill.style.background = battery > 30 ? '#10b981' : (battery > 15 ? '#f59e0b' : '#ef4444');
+
+    // ROAD CONTACT: WHEELS SIT FLUSH ON ROAD
+    const roadYAtScooter = getRoadY(scooter.x + 40);
+    const roadNext = getRoadY(scooter.x + 55);
+    scooter.angle = Math.atan2(roadNext - roadYAtScooter, 15);
+
+    // EXACT ON-GROUND HEIGHT (No air gap)
+    const targetY = roadYAtScooter - 66;
+
+    scooter.y += scooter.vy;
+    if (!scooter.isGrounded) {
+        scooter.vy += scooter.gravity;
+        if (scooter.y >= targetY) {
+            scooter.y = targetY;
+            scooter.vy = 0;
+            scooter.isGrounded = true;
+            suspensionBounce = 5;
+            playSFX(120, 0.08, 'sine', 0.15);
+        }
+    } else {
+        scooter.y = targetY;
+    }
+
+    if (suspensionBounce > 0) suspensionBounce *= 0.8;
+
+    distance += scooter.speed * 0.09;
+    distCountEl.innerText = Math.floor(distance);
+    scooter.wheelAngle += scooter.speed * 0.15;
+
+    currentBiomeIndex = Math.floor(distance / 400) % BIOMES.length;
+    const currentBiome = BIOMES[currentBiomeIndex];
+    biomeBadge.innerText = `${currentBiome.icon} ${currentBiome.name}`;
+
+    bgFar.forEach(b => {
+        b.x -= scooter.speed * 0.2;
+        if (b.x + b.width < 0) b.x = canvas.width + Math.random() * 25;
+    });
+
+    spawnTimer += scooter.speed;
+    if (spawnTimer > 170) {
+        spawnItem();
+        spawnTimer = 0;
+    }
+
+    // GAME OBJECTS GROUNDING
+    for (let i = gameObjects.length - 1; i >= 0; i--) {
+        const obj = gameObjects[i];
+        obj.x -= (scooter.speed + obj.moveSpeed);
+
+        const objGroundY = getRoadY(obj.x + obj.width / 2);
+        if (obj.type === 'coin' || obj.type === 'battery') {
+            obj.y = objGroundY - 45 - Math.sin(Date.now() * 0.005 + i) * 6; // Reachable hover
+        } else {
+            obj.y = objGroundY - obj.height + 4; // Firmly placed on asphalt
+        }
+
+        const pLeft = scooter.x + 12;
+        const pRight = scooter.x + scooter.width - 12;
+        const pTop = scooter.y + 10;
+        const pBottom = scooter.y + 68;
+
+        if (pRight > obj.x && pLeft < obj.x + obj.width && pBottom > obj.y && pTop < obj.y + obj.height) {
+            if (obj.type === 'coin') {
+                runEarnedCoins += 1;
+                totalCoins += 1;
+                saveGameData();
+                playSFX(920, 0.09, 'sine', 0.15);
+                createSparks(obj.x, obj.y, '#fbbf24');
+                gameObjects.splice(i, 1);
+                continue;
+            } else if (obj.type === 'battery') {
+                battery = Math.min(100, battery + 35);
+                playSFX(620, 0.15, 'square', 0.1);
+                createSparks(obj.x, obj.y, '#10b981');
+                gameObjects.splice(i, 1);
+                continue;
+            } else if (obj.type === 'speed_breaker') {
+                suspensionBounce = 10;
+                scooter.speed *= 0.85;
+                playSFX(140, 0.18, 'sawtooth', 0.15);
+                createSparks(scooter.x + 35, getRoadY(scooter.x), '#ffffff');
+                continue;
+            } else if (obj.type === 'cone' || obj.type === 'barrier' || obj.type === 'traffic_car') {
+                playSFX(60, 0.45, 'sawtooth', 0.35);
+                createSparks(obj.x, obj.y, '#ef4444');
+                endGame('CRASHED!', obj.type === 'traffic_car' ? 'Traffic car se takkar ho gayi!' : 'Road barrier se takraye!');
+                return;
+            }
+        }
+        if (obj.x < -100) gameObjects.splice(i, 1);
+    }
+
+    weatherParticles.forEach(wp => {
+        wp.x += wp.speedX - scooter.speed * 0.5;
+        wp.y += wp.speedY;
+        if (wp.y > canvas.height) wp.y = 0;
+        if (wp.x < 0) wp.x = canvas.width;
+    });
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.04;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function endGame(title, msg) {
+    isPlaying = false;
+    stopEngineSound();
+    gameoverHeading.innerText = title;
+    gameoverMsg.innerText = msg;
+    finalDistEl.innerText = Math.floor(distance);
+    finalCoinsEl.innerText = runEarnedCoins;
+    saveGameData();
+    gameoverScreen.style.display = 'flex';
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cur = BIOMES[currentBiomeIndex];
+
+    // 1. Sky Gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    sky.addColorStop(0, isNitroActive ? '#3b0764' : cur.skyTop);
+    sky.addColorStop(0.65, isNitroActive ? '#c026d3' : cur.skyBottom);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Parallax Skyline (Tied closely to the horizon)
+    bgFar.forEach(b => {
+        ctx.fillStyle = isNitroActive ? '#1e1b4b' : 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(b.x, canvas.height - 110 - b.height, b.width, b.height);
+        ctx.fillStyle = isNitroActive ? '#f472b6' : 'rgba(253, 224, 71, 0.4)';
+        for (let wy = canvas.height - 110 - b.height + 15; wy < canvas.height - 120; wy += 25) {
+            ctx.fillRect(b.x + 8, wy, 7, 10);
+            ctx.fillRect(b.x + b.width - 15, wy, 7, 10);
+        }
+    });
+
+    // 3. Dynamic Weather Layer
+    ctx.fillStyle = '#ffffff';
+    weatherParticles.forEach(wp => {
+        if (cur.weather === 'rain') {
+            ctx.strokeStyle = 'rgba(147, 197, 253, 0.55)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(wp.x, wp.y);
+            ctx.lineTo(wp.x - 4, wp.y + 12);
+            ctx.stroke();
+        } else if (cur.weather === 'snow') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(wp.x, wp.y, wp.size + 1, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (cur.weather === 'sand') {
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.5)';
+            ctx.fillRect(wp.x, wp.y, wp.size * 2, wp.size * 2);
+        } else if (cur.weather === 'ash') {
+            ctx.fillStyle = 'rgba(248, 113, 113, 0.6)';
+            ctx.fillRect(wp.x, wp.y, 2, 2);
+        }
+    });
+
+    // 4. Solid Road Body (Fills all the way to bottom)
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    for (let x = 0; x <= canvas.width; x += 10) {
+        ctx.lineTo(x, getRoadY(x));
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.closePath();
+    ctx.fillStyle = cur.road;
+    ctx.fill();
+
+    // Road Curb (Top border line of the pavement)
+    ctx.beginPath();
+    for (let x = 0; x <= canvas.width; x += 10) {
+        if (x === 0) ctx.moveTo(x, getRoadY(x));
+        else ctx.lineTo(x, getRoadY(x));
+    }
+    ctx.strokeStyle = cur.curb;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    // Road White/Yellow Dash Stripes (Positioned middle of road)
+    ctx.strokeStyle = isNitroActive ? '#facc15' : '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([25, 20]);
+    ctx.lineDashOffset = -distance * 10;
+    ctx.beginPath();
+    for (let x = 0; x <= canvas.width; x += 10) {
+        if (x === 0) ctx.moveTo(x, getRoadY(x) + 40);
+        else ctx.lineTo(x, getRoadY(x) + 40);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 5. Game Objects
+    gameObjects.forEach(obj => {
+        if (obj.type === 'coin') {
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(obj.x + 12, obj.y + 12, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#78350f';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('🪙', obj.x + 4, obj.y + 16);
+        } else if (obj.type === 'battery') {
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(obj.x, obj.y, 24, 18);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(obj.x + 24, obj.y + 4, 4, 10);
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('⚡', obj.x + 6, obj.y + 15);
+        } else if (obj.type === 'cone') {
+            ctx.fillStyle = '#ea580c';
+            ctx.beginPath();
+            ctx.moveTo(obj.x + 12, obj.y);
+            ctx.lineTo(obj.x, obj.y + obj.height);
+            ctx.lineTo(obj.x + 24, obj.y + obj.height);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(obj.x + 4, obj.y + 14, 16, 5);
+        } else if (obj.type === 'barrier') {
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(obj.x, obj.y, 38, 16);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(obj.x + 8, obj.y, 9, 16);
+            ctx.fillRect(obj.x + 24, obj.y, 9, 16);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(obj.x + 5, obj.y + 16, 5, 14);
+            ctx.fillRect(obj.x + 28, obj.y + 16, 5, 14);
+        } else if (obj.type === 'traffic_car') {
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(obj.x, obj.y + 14, obj.width, obj.height - 14);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(obj.x + 16, obj.y + 4, 48, 14);
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(obj.x + 20, obj.y + obj.height - 2, 9, 0, Math.PI * 2);
+            ctx.arc(obj.x + obj.width - 20, obj.y + obj.height - 2, 9, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (obj.type === 'speed_breaker') {
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+            ctx.fillStyle = '#000';
+            for(let i = 0; i < obj.width; i += 10) ctx.fillRect(obj.x + i, obj.y, 5, obj.height);
+        }
+    });
+
+    // 6. Particles
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 4, 4);
+    });
+    ctx.globalAlpha = 1.0;
+
+    // 7. Grounded Rider
+    drawRealScooter(scooter.x, scooter.y + suspensionBounce, scooter.angle);
+}
+
+function drawRealScooter(x, y, angle) {
+    ctx.save();
+    // Anchor center at bottom wheels
+    ctx.translate(x + 40, y + 54);
+    ctx.rotate(angle);
+    ctx.translate(-40, -54);
+
+    // Tire Contact Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(40, 68, 42, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rear Wheel (Resting directly on road line)
+    ctx.save();
+    ctx.translate(16, 54);
+    ctx.rotate(scooter.wheelAngle);
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(0, 0, scooter.wheelRadius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.fillStyle = currentPaint; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Front Wheel
+    ctx.save();
+    ctx.translate(72, 54);
+    ctx.rotate(scooter.wheelAngle);
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(0, 0, scooter.wheelRadius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3.5; ctx.stroke();
+    ctx.fillStyle = currentPaint; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Frame
+    ctx.fillStyle = currentPaint;
+    ctx.beginPath();
+    ctx.moveTo(14, 48);
+    ctx.lineTo(72, 48);
+    ctx.lineTo(78, 24);
+    ctx.lineTo(68, 14);
+    ctx.lineTo(38, 18);
+    ctx.lineTo(14, 38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Seat
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath(); ctx.roundRect(16, 34, 36, 12, 4); ctx.fill();
+
+    // Handlebar Stem
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(74, 24); ctx.lineTo(78, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(68, 0); ctx.lineTo(88, 0); ctx.stroke();
+
+    // Headlight & Beam
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath(); ctx.arc(80, 14, 4.5, 0, Math.PI * 2); ctx.fill();
+
+    const beam = ctx.createLinearGradient(84, 14, 180, 30);
+    beam.addColorStop(0, 'rgba(254, 240, 138, 0.4)');
+    beam.addColorStop(1, 'rgba(254, 240, 138, 0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(84, 12);
+    ctx.lineTo(180, -10);
+    ctx.lineTo(180, 40);
+    ctx.closePath();
+    ctx.fill();
+
+    // Rider
+    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(34, 40); ctx.lineTo(44, 50); ctx.stroke();
+
+    ctx.fillStyle = currentRider;
+    ctx.beginPath(); ctx.roundRect(28, 4, 16, 30, 5); ctx.fill();
+
+    ctx.strokeStyle = currentRider; ctx.lineWidth = 5.5;
+    ctx.beginPath(); ctx.moveTo(38, 12); ctx.lineTo(75, 4); ctx.stroke();
+
+    // Helmet
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(36, -4, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = isNitroActive ? '#facc15' : currentPaint;
+    ctx.beginPath(); ctx.roundRect(40, -8, 9, 6, 2); ctx.fill();
+
+    // Nitro Thruster
+    if (isNitroActive) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.moveTo(12, 40); ctx.lineTo(-18, 48); ctx.lineTo(12, 54);
+        ctx.fill();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(12, 43); ctx.lineTo(-8, 48); ctx.lineTo(12, 51);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+function loop() {
+    update();
+    render();
+    requestAnimationFrame(loop);
+}
+
+function startGame() {
+    initAudio();
+    startEngineSound();
+    distance = 0;
+    currentBiomeIndex = 0;
+    runEarnedCoins = 0;
+    battery = 100;
+    scooter.speed = 0;
+    applyActiveVehicleStats();
+    scooter.y = getRoadY(scooter.x + 40) - 66;
+    gameObjects = [];
+    particles = [];
+    coinsCountEl.innerText = totalCoins;
+    distCountEl.innerText = '0';
+    startScreen.style.display = 'none';
+    gameoverScreen.style.display = 'none';
+    garageScreen.style.display = 'none';
+    isPlaying = true;
+}
+
+function renderGarage() {
+    garageCoinsVal.innerText = totalCoins;
+    const container = document.getElementById('vehicles-container');
+    container.innerHTML = '';
+
+    VEHICLES.forEach(veh => {
+        const isOwned = ownedVehicles.includes(veh.id);
+        const isSelected = (veh.id === currentVehicleId);
+        const card = document.createElement('div');
+        card.className = `veh-card ${isSelected ? 'selected' : ''}`;
+
+        let actionBtnHTML = '';
+        if (isSelected) actionBtnHTML = `<button class="btn-card btn-equipped">EQUIPPED</button>`;
+        else if (isOwned) actionBtnHTML = `<button class="btn-card btn-select" onclick="selectVehicle('${veh.id}')">SELECT</button>`;
+        else actionBtnHTML = `<button class="btn-card btn-buy" onclick="buyVehicle('${veh.id}', ${veh.price})">BUY 🪙${veh.price}</button>`;
+
+        card.innerHTML = `
+            <div class="veh-name">${veh.name}</div>
+            <div class="veh-stat">Spd: ${veh.maxSpeed} | ${veh.desc}</div>
+            ${actionBtnHTML}
+        `;
+        container.appendChild(card);
+    });
+
+    const colorBox = document.getElementById('color-swatches');
+    colorBox.innerHTML = '';
+    PAINTS.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className = `swatch ${currentPaint === c ? 'active' : ''}`;
+        sw.style.backgroundColor = c;
+        sw.onclick = () => { currentPaint = c; saveGameData(); renderGarage(); };
+        colorBox.appendChild(sw);
+    });
+
+    const riderBox = document.getElementById('rider-swatches');
+    riderBox.innerHTML = '';
+    RIDERS.forEach(r => {
+        const sw = document.createElement('div');
+        sw.className = `swatch ${currentRider === r ? 'active' : ''}`;
+        sw.style.backgroundColor = r;
+        sw.onclick = () => { currentRider = r; saveGameData(); renderGarage(); };
+        riderBox.appendChild(sw);
+    });
+}
+
+window.selectVehicle = function(id) {
+    currentVehicleId = id;
+    saveGameData();
+    renderGarage();
+};
+window.buyVehicle = function(id, price) {
+    if (totalCoins >= price) {
+        totalCoins -= price;
+        ownedVehicles.push(id);
+        currentVehicleId = id;
+        saveGameData();
+        playSFX(880, 0.3, 'sine', 0.2);
+        renderGarage();
+    } else {
+        alert('Coins kam hain! Run khel kar aur coins collect karein.');
+    }
+};
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-restart').addEventListener('click', startGame);
+document.getElementById('btn-open-garage').addEventListener('click', () => {
+    initAudio();
+    renderGarage();
+    garageScreen.style.display = 'flex';
+});
+document.getElementById('btn-gameover-garage').addEventListener('click', () => {
+    gameoverScreen.style.display = 'none';
+    renderGarage();
+    garageScreen.style.display = 'flex';
+});
+document.getElementById('btn-close-garage').addEventListener('click', () => {
+    garageScreen.style.display = 'none';
+});
+
+saveGameData();
+applyActiveVehicleStats();
+loop();
+</script>
+</body>
+</html>
